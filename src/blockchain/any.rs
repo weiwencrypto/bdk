@@ -21,7 +21,7 @@
 //! assigned to a struct member.
 //!
 //! ```no_run
-//! # use bitcoin::Network;
+//! # use bdk::bitcoin::{Blockchain, Network};
 //! # use bdk::blockchain::*;
 //! # use bdk::database::MemoryDatabase;
 //! # use bdk::Wallet;
@@ -32,6 +32,7 @@
 //!     "...",
 //!     None,
 //!     Network::Testnet,
+//!     Blockchain::Bitcoin,
 //!     MemoryDatabase::default(),
 //!     electrum_blockchain.into(),
 //! )?;
@@ -44,6 +45,7 @@
 //!     "...",
 //!     None,
 //!     Network::Testnet,
+//!     Blockchain::Bitcoin,
 //!     MemoryDatabase::default(),
 //!     esplora_blockchain.into(),
 //! )?;
@@ -56,7 +58,7 @@
 //! blockchain type supported using a single line of code:
 //!
 //! ```no_run
-//! # use bitcoin::Network;
+//! # use bdk::bitcoin::{Blockchain, Network};
 //! # use bdk::blockchain::*;
 //! # use bdk::database::MemoryDatabase;
 //! # use bdk::Wallet;
@@ -68,6 +70,7 @@
 //!     "...",
 //!     None,
 //!     Network::Testnet,
+//!     Blockchain::Bitcoin,
 //!     MemoryDatabase::default(),
 //!     blockchain,
 //! )?;
@@ -177,7 +180,7 @@ impl_from!(rpc::RpcBlockchain, AnyBlockchain, Rpc, #[cfg(feature = "rpc")]);
 /// This type can be serialized from a JSON object like:
 ///
 /// ```
-/// # #[cfg(feature = "electrum")]
+/// # #[cfg(all(feature = "electrum", features = "proxy"))]
 /// # {
 /// use bdk::blockchain::{electrum::ElectrumBlockchainConfig, AnyBlockchainConfig};
 /// let config: AnyBlockchainConfig = serde_json::from_str(

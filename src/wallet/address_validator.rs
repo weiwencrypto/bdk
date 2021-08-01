@@ -43,7 +43,7 @@
 //!         hd_keypaths: &HdKeyPaths,
 //!         script: &Script
 //!     ) -> Result<(), AddressValidatorError> {
-//!         let address = Address::from_script(script, Network::Testnet)
+//!         let address = Address::from_script(script, Network::Testnet, Blockchain::Bitcoin)
 //!             .as_ref()
 //!             .map(Address::to_string)
 //!             .unwrap_or(script.to_string());
@@ -55,7 +55,7 @@
 //! }
 //!
 //! let descriptor = "wpkh(tpubD6NzVbkrYhZ4Xferm7Pz4VnjdcDPFyjVu5K4iZXQ4pVN8Cks4pHVowTBXBKRhX64pkRyJZJN5xAKj4UDNnLPb5p2sSKXhewoYx5GbTdUFWq/*)";
-//! let mut wallet = Wallet::new_offline(descriptor, None, Network::Testnet, MemoryDatabase::default())?;
+//! let mut wallet = Wallet::new_offline(descriptor, None, Network::Testnet, Blockchain::Bitcoin, MemoryDatabase::default())?;
 //! wallet.add_address_validator(Arc::new(PrintAddressAndContinue));
 //!
 //! let address = wallet.get_address(New)?;

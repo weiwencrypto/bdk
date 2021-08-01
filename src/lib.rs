@@ -49,6 +49,7 @@
 
 ### Example
 ```no_run
+use bitcoin::Blockchain;
 use bdk::Wallet;
 use bdk::database::MemoryDatabase;
 use bdk::blockchain::{noop_progress, ElectrumBlockchain};
@@ -60,6 +61,7 @@ fn main() -> Result<(), bdk::Error> {
         "wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/0/*)",
         Some("wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/1/*)"),
         bitcoin::Network::Testnet,
+        Blockchain::Bitcoin,
         MemoryDatabase::default(),
         ElectrumBlockchain::from(client)
     )?;
@@ -78,6 +80,7 @@ fn main() -> Result<(), bdk::Error> {
 //!
 //! ### Example
 //! ```
+//! use bitcoin::Blockchain;
 //! use bdk::{Wallet};
 //! use bdk::database::MemoryDatabase;
 //! use bdk::wallet::AddressIndex::New;
@@ -87,6 +90,7 @@ fn main() -> Result<(), bdk::Error> {
 //!         "wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/0/*)",
 //!         Some("wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/1/*)"),
 //!         bitcoin::Network::Testnet,
+//!         Blockchain::Bitcoin,
 //!         MemoryDatabase::default(),
 //!     )?;
 //!
@@ -104,6 +108,7 @@ fn main() -> Result<(), bdk::Error> {
 
 ### Example
 ```no_run
+use bitcoin::Blockchain;
 use bdk::{FeeRate, Wallet};
 use bdk::database::MemoryDatabase;
 use bdk::blockchain::{noop_progress, ElectrumBlockchain};
@@ -118,6 +123,7 @@ fn main() -> Result<(), bdk::Error> {
         "wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/0/*)",
         Some("wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/1/*)"),
         bitcoin::Network::Testnet,
+        Blockchain::Bitcoin,
         MemoryDatabase::default(),
         ElectrumBlockchain::from(client)
     )?;
@@ -150,6 +156,7 @@ fn main() -> Result<(), bdk::Error> {
 //! ```no_run
 //! use std::str::FromStr;
 //!
+//! use bitcoin::Blockchain;
 //! use bitcoin::util::psbt::PartiallySignedTransaction as Psbt;
 //!
 //! use bdk::{Wallet, SignOptions};
@@ -160,6 +167,7 @@ fn main() -> Result<(), bdk::Error> {
 //!         "wpkh([c258d2e4/84h/1h/0h]tprv8griRPhA7342zfRyB6CqeKF8CJDXYu5pgnj1cjL1u2ngKcJha5jjTRimG82ABzJQ4MQe71CV54xfn25BbhCNfEGGJZnxvCDQCd6JkbvxW6h/0/*)",
 //!         Some("wpkh([c258d2e4/84h/1h/0h]tprv8griRPhA7342zfRyB6CqeKF8CJDXYu5pgnj1cjL1u2ngKcJha5jjTRimG82ABzJQ4MQe71CV54xfn25BbhCNfEGGJZnxvCDQCd6JkbvxW6h/1/*)"),
 //!         bitcoin::Network::Testnet,
+//!         Blockchain::Bitcoin,
 //!         MemoryDatabase::default(),
 //!     )?;
 //!

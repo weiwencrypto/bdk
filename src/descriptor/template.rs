@@ -71,7 +71,7 @@ impl<T: DescriptorTemplate> IntoWalletDescriptor for T {
 /// ## Example
 ///
 /// ```
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{Blockchain, PrivateKey, Network};
 /// # use bdk::{Wallet};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -83,6 +83,7 @@ impl<T: DescriptorTemplate> IntoWalletDescriptor for T {
 ///     P2Pkh(key),
 ///     None,
 ///     Network::Testnet,
+///     Blockchain::Bitcoin,
 ///     MemoryDatabase::default(),
 /// )?;
 ///
@@ -105,8 +106,8 @@ impl<K: IntoDescriptorKey<Legacy>> DescriptorTemplate for P2Pkh<K> {
 /// ## Example
 ///
 /// ```
-/// # use bdk::bitcoin::{PrivateKey, Network};
-/// # use bdk::{Wallet};
+/// # use bdk::bitcoin::{Blockchain, PrivateKey, Network};
+/// # use bdk::Wallet;
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
 /// use bdk::template::P2Wpkh_P2Sh;
@@ -117,6 +118,7 @@ impl<K: IntoDescriptorKey<Legacy>> DescriptorTemplate for P2Pkh<K> {
 ///     P2Wpkh_P2Sh(key),
 ///     None,
 ///     Network::Testnet,
+///     Blockchain::Bitcoin,
 ///     MemoryDatabase::default(),
 /// )?;
 ///
@@ -140,7 +142,7 @@ impl<K: IntoDescriptorKey<Segwitv0>> DescriptorTemplate for P2Wpkh_P2Sh<K> {
 /// ## Example
 ///
 /// ```
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{Blockchain, PrivateKey, Network};
 /// # use bdk::{Wallet};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -152,6 +154,7 @@ impl<K: IntoDescriptorKey<Segwitv0>> DescriptorTemplate for P2Wpkh_P2Sh<K> {
 ///     P2Wpkh(key),
 ///     None,
 ///     Network::Testnet,
+///     Blockchain::Bitcoin,
 ///     MemoryDatabase::default(),
 /// )?;
 ///
@@ -179,7 +182,7 @@ impl<K: IntoDescriptorKey<Segwitv0>> DescriptorTemplate for P2Wpkh<K> {
 ///
 /// ```
 /// # use std::str::FromStr;
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{Blockchain, PrivateKey, Network};
 /// # use bdk::{Wallet,  KeychainKind};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -190,6 +193,7 @@ impl<K: IntoDescriptorKey<Segwitv0>> DescriptorTemplate for P2Wpkh<K> {
 ///     Bip44(key.clone(), KeychainKind::External),
 ///     Some(Bip44(key, KeychainKind::Internal)),
 ///     Network::Testnet,
+///     Blockchain::Bitcoin,
 ///     MemoryDatabase::default()
 /// )?;
 ///
@@ -218,7 +222,7 @@ impl<K: DerivableKey<Legacy>> DescriptorTemplate for Bip44<K> {
 ///
 /// ```
 /// # use std::str::FromStr;
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{Blockchain, PrivateKey, Network};
 /// # use bdk::{Wallet,  KeychainKind};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -230,6 +234,7 @@ impl<K: DerivableKey<Legacy>> DescriptorTemplate for Bip44<K> {
 ///     Bip44Public(key.clone(), fingerprint, KeychainKind::External),
 ///     Some(Bip44Public(key, fingerprint, KeychainKind::Internal)),
 ///     Network::Testnet,
+///     Blockchain::Bitcoin,
 ///     MemoryDatabase::default()
 /// )?;
 ///
@@ -255,7 +260,7 @@ impl<K: DerivableKey<Legacy>> DescriptorTemplate for Bip44Public<K> {
 ///
 /// ```
 /// # use std::str::FromStr;
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{Blockchain, PrivateKey, Network};
 /// # use bdk::{Wallet,  KeychainKind};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -266,6 +271,7 @@ impl<K: DerivableKey<Legacy>> DescriptorTemplate for Bip44Public<K> {
 ///     Bip49(key.clone(), KeychainKind::External),
 ///     Some(Bip49(key, KeychainKind::Internal)),
 ///     Network::Testnet,
+///     Blockchain::Bitcoin,
 ///     MemoryDatabase::default()
 /// )?;
 ///
@@ -294,7 +300,7 @@ impl<K: DerivableKey<Segwitv0>> DescriptorTemplate for Bip49<K> {
 ///
 /// ```
 /// # use std::str::FromStr;
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{Blockchain, PrivateKey, Network};
 /// # use bdk::{Wallet,  KeychainKind};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -306,6 +312,7 @@ impl<K: DerivableKey<Segwitv0>> DescriptorTemplate for Bip49<K> {
 ///     Bip49Public(key.clone(), fingerprint, KeychainKind::External),
 ///     Some(Bip49Public(key, fingerprint, KeychainKind::Internal)),
 ///     Network::Testnet,
+///     Blockchain::Bitcoin,
 ///     MemoryDatabase::default()
 /// )?;
 ///
@@ -331,7 +338,7 @@ impl<K: DerivableKey<Segwitv0>> DescriptorTemplate for Bip49Public<K> {
 ///
 /// ```
 /// # use std::str::FromStr;
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{Blockchain, PrivateKey, Network};
 /// # use bdk::{Wallet,  KeychainKind};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -342,6 +349,7 @@ impl<K: DerivableKey<Segwitv0>> DescriptorTemplate for Bip49Public<K> {
 ///     Bip84(key.clone(), KeychainKind::External),
 ///     Some(Bip84(key, KeychainKind::Internal)),
 ///     Network::Testnet,
+///     Blockchain::Bitcoin,
 ///     MemoryDatabase::default()
 /// )?;
 ///
@@ -370,7 +378,7 @@ impl<K: DerivableKey<Segwitv0>> DescriptorTemplate for Bip84<K> {
 ///
 /// ```
 /// # use std::str::FromStr;
-/// # use bdk::bitcoin::{PrivateKey, Network};
+/// # use bdk::bitcoin::{Blockchain, PrivateKey, Network};
 /// # use bdk::{Wallet,  KeychainKind};
 /// # use bdk::database::MemoryDatabase;
 /// # use bdk::wallet::AddressIndex::New;
@@ -382,6 +390,7 @@ impl<K: DerivableKey<Segwitv0>> DescriptorTemplate for Bip84<K> {
 ///     Bip84Public(key.clone(), fingerprint, KeychainKind::External),
 ///     Some(Bip84Public(key, fingerprint, KeychainKind::Internal)),
 ///     Network::Testnet,
+///     Blockchain::Bitcoin,
 ///     MemoryDatabase::default()
 /// )?;
 ///
@@ -463,6 +472,7 @@ mod test {
     use crate::keys::ValidNetworks;
     use bitcoin::network::constants::Network::Regtest;
     use bitcoin::secp256k1::Secp256k1;
+    use bitcoin::Blockchain;
     use miniscript::descriptor::{DescriptorPublicKey, DescriptorTrait, KeyMap};
     use miniscript::Descriptor;
 
@@ -485,7 +495,7 @@ mod test {
             } else {
                 desc.as_derived(index, &secp)
             };
-            let address = child_desc.address(Regtest).unwrap();
+            let address = child_desc.address(Regtest, Blockchain::Bitcoin).unwrap();
             assert_eq!(address.to_string(), *expected.get(i).unwrap());
         }
     }

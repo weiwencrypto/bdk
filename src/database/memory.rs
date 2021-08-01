@@ -529,6 +529,7 @@ macro_rules! doctest_wallet {
             &descriptors.0,
             descriptors.1.as_ref(),
             Network::Regtest,
+            $crate::bitcoin::Blockchain::Bitcoin,
             db
         )
         .unwrap()

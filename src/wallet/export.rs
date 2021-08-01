@@ -34,6 +34,7 @@
 //!     &import.descriptor(),
 //!     import.change_descriptor().as_ref(),
 //!     Network::Testnet,
+//!     Blockchain::Bitcoin,
 //!     MemoryDatabase::default(),
 //! )?;
 //! # Ok::<_, bdk::Error>(())
@@ -49,6 +50,7 @@
 //!     "wpkh([c258d2e4/84h/1h/0h]tpubDD3ynpHgJQW8VvWRzQ5WFDCrs4jqVFGHB3vLC3r49XHJSqP8bHKdK4AriuUKLccK68zfzowx7YhmDN8SiSkgCDENUFx9qVw65YyqM78vyVe/0/*)",
 //!     Some("wpkh([c258d2e4/84h/1h/0h]tpubDD3ynpHgJQW8VvWRzQ5WFDCrs4jqVFGHB3vLC3r49XHJSqP8bHKdK4AriuUKLccK68zfzowx7YhmDN8SiSkgCDENUFx9qVw65YyqM78vyVe/1/*)"),
 //!     Network::Testnet,
+//!     Blockchain::Bitcoin,
 //!     MemoryDatabase::default()
 //! )?;
 //! let export = WalletExport::export_wallet(&wallet, "exported wallet", true)
@@ -206,7 +208,7 @@ impl WalletExport {
 mod test {
     use std::str::FromStr;
 
-    use bitcoin::{Network, Txid};
+    use bitcoin::{Blockchain, Network, Txid};
 
     use super::*;
     use crate::database::{memory::MemoryDatabase, BatchOperations};
@@ -246,6 +248,7 @@ mod test {
             descriptor,
             Some(change_descriptor),
             Network::Bitcoin,
+            Blockchain::Bitcoin,
             get_test_db(),
         )
         .unwrap();
@@ -266,8 +269,14 @@ mod test {
 
         let descriptor = "wpkh(xprv9s21ZrQH143K4CTb63EaMxja1YiTnSEWKMbn23uoEnAzxjdUJRQkazCAtzxGm4LSoTSVTptoV9RbchnKPW9HxKtZumdyxyikZFDLhogJ5Uj/44'/0'/0'/0/*)";
 
-        let wallet =
-            Wallet::new_offline(descriptor, None, Network::Bitcoin, get_test_db()).unwrap();
+        let wallet = Wallet::new_offline(
+            descriptor,
+            None,
+            Network::Bitcoin,
+            Blockchain::Bitcoin,
+            get_test_db(),
+        )
+        .unwrap();
         WalletExport::export_wallet(&wallet, "Test Label", true).unwrap();
     }
 
@@ -284,6 +293,7 @@ mod test {
             descriptor,
             Some(change_descriptor),
             Network::Bitcoin,
+            Blockchain::Bitcoin,
             get_test_db(),
         )
         .unwrap();
@@ -307,6 +317,7 @@ mod test {
             descriptor,
             Some(change_descriptor),
             Network::Testnet,
+            Blockchain::Bitcoin,
             get_test_db(),
         )
         .unwrap();
@@ -327,6 +338,7 @@ mod test {
             descriptor,
             Some(change_descriptor),
             Network::Bitcoin,
+            Blockchain::Bitcoin,
             get_test_db(),
         )
         .unwrap();
