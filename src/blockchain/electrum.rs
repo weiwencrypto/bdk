@@ -11,35 +11,31 @@
 
 //! Electrum
 //!
-//! This module defines a [`Blockchain`] struct that wraps an [`electrum_client::Client`]
+//! This module defines a [`Blockchain`] struct that wraps an [`electrum_client::RawClient`]
 //! and implements the logic required to populate the wallet's [database](crate::database::Database) by
 //! querying the inner client.
 //!
-//! ## Example
-//!
-//! ```no_run
-//! # use bdk::blockchain::electrum::ElectrumBlockchain;
-//! let client = electrum_client::Client::new("ssl://electrum.blockstream.info:50002")?;
-//! let blockchain = ElectrumBlockchain::from(client);
-//! # Ok::<(), bdk::Error>(())
-//! ```
+//! Use with Fortanix SGX requires use of `RawClient` instead of `Client`
+//! because we have to do our own DNS resolution.
 
 use std::collections::HashSet;
+use std::net::TcpStream;
 
 #[allow(unused_imports)]
 use log::{debug, error, info, trace};
 
 use bitcoin::{BlockHeader, Script, Transaction, Txid};
 
-#[cfg(feature = "proxy")]
-use electrum_client::Socks5Config;
-use electrum_client::{Client, ConfigBuilder, ElectrumApi};
+use electrum_client::raw_client::RawClient;
+use electrum_client::ElectrumApi;
 
 use self::utils::{ElectrumLikeSync, ElsGetHistoryRes};
 use super::*;
 use crate::database::BatchDatabase;
 use crate::error::Error;
 use crate::FeeRate;
+
+type Client = RawClient<TcpStream>;
 
 /// Wrapper over an Electrum Client that implements the required blockchain traits
 ///
@@ -150,9 +146,6 @@ pub struct ElectrumBlockchainConfig {
     ///
     /// eg. `ssl://electrum.blockstream.info:60002`
     pub url: String,
-    /// URL of the socks5 proxy server or a Tor service
-    #[cfg(feature = "proxy")]
-    pub socks5: Option<String>,
     /// Request retry count
     pub retry: u8,
     /// Request timeout (seconds)
@@ -164,31 +157,8 @@ pub struct ElectrumBlockchainConfig {
 impl ConfigurableBlockchain for ElectrumBlockchain {
     type Config = ElectrumBlockchainConfig;
 
-    fn from_config(config: &Self::Config) -> Result<Self, Error> {
-        #[cfg(feature = "proxy")]
-        {
-            let socks5 = config.socks5.as_ref().map(Socks5Config::new);
-            let electrum_config = ConfigBuilder::new()
-                .retry(config.retry)
-                .timeout(config.timeout)?
-                .socks5(socks5)?
-                .build();
-
-            return Ok(ElectrumBlockchain {
-                client: Client::from_config(config.url.as_str(), electrum_config)?,
-                stop_gap: config.stop_gap,
-            });
-        }
-
-        let electrum_config = ConfigBuilder::new()
-            .retry(config.retry)
-            .timeout(config.timeout)?
-            .build();
-
-        Ok(ElectrumBlockchain {
-            client: Client::from_config(config.url.as_str(), electrum_config)?,
-            stop_gap: config.stop_gap,
-        })
+    fn from_config(_: &Self::Config) -> Result<Self, Error> {
+        unimplemented!("We don't want this but removing it prevents `any` from building")
     }
 }
 

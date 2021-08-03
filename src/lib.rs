@@ -42,39 +42,6 @@
 //! ```toml
 //! bdk = "0.10.0"
 //! ```
-#![cfg_attr(
-    feature = "electrum",
-    doc = r##"
-## Sync the balance of a descriptor
-
-### Example
-```no_run
-use bitcoin::Blockchain;
-use bdk::Wallet;
-use bdk::database::MemoryDatabase;
-use bdk::blockchain::{noop_progress, ElectrumBlockchain};
-use bdk::electrum_client::Client;
-
-fn main() -> Result<(), bdk::Error> {
-    let client = Client::new("ssl://electrum.blockstream.info:60002")?;
-    let wallet = Wallet::new(
-        "wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/0/*)",
-        Some("wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/1/*)"),
-        bitcoin::Network::Testnet,
-        Blockchain::Bitcoin,
-        MemoryDatabase::default(),
-        ElectrumBlockchain::from(client)
-    )?;
-
-    wallet.sync(noop_progress(), None)?;
-
-    println!("Descriptor balance: {} SAT", wallet.get_balance()?);
-
-    Ok(())
-}
-```
-"##
-)]
 //!
 //! ## Generate a few addresses
 //!
@@ -101,54 +68,6 @@ fn main() -> Result<(), bdk::Error> {
 //!     Ok(())
 //! }
 //! ```
-#![cfg_attr(
-    feature = "electrum",
-    doc = r##"
-## Create a transaction
-
-### Example
-```no_run
-use bitcoin::Blockchain;
-use bdk::{FeeRate, Wallet};
-use bdk::database::MemoryDatabase;
-use bdk::blockchain::{noop_progress, ElectrumBlockchain};
-use bdk::electrum_client::Client;
-
-use bitcoin::consensus::serialize;
-use bdk::wallet::AddressIndex::New;
-
-fn main() -> Result<(), bdk::Error> {
-    let client = Client::new("ssl://electrum.blockstream.info:60002")?;
-    let wallet = Wallet::new(
-        "wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/0/*)",
-        Some("wpkh([c258d2e4/84h/1h/0h]tpubDDYkZojQFQjht8Tm4jsS3iuEmKjTiEGjG6KnuFNKKJb5A6ZUCUZKdvLdSDWofKi4ToRCwb9poe1XdqfUnP4jaJjCB2Zwv11ZLgSbnZSNecE/1/*)"),
-        bitcoin::Network::Testnet,
-        Blockchain::Bitcoin,
-        MemoryDatabase::default(),
-        ElectrumBlockchain::from(client)
-    )?;
-
-    wallet.sync(noop_progress(), None)?;
-
-    let send_to = wallet.get_address(New)?;
-    let (psbt, details) = {
-        let mut builder =  wallet.build_tx();
-        builder
-            .add_recipient(send_to.script_pubkey(), 50_000)
-            .enable_rbf()
-            .do_not_spend_change()
-            .fee_rate(FeeRate::from_sat_per_vb(5.0));
-        builder.finish()?
-    };
-
-    println!("Transaction details: {:#?}", details);
-    println!("Unsigned PSBT: {}", &psbt);
-
-    Ok(())
-}
-```
-"##
-)]
 //!
 //! ## Sign a transaction
 //!

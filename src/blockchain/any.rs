@@ -25,7 +25,7 @@
 //! # use bdk::blockchain::*;
 //! # use bdk::database::MemoryDatabase;
 //! # use bdk::Wallet;
-//! # #[cfg(feature = "electrum")]
+//! # #[cfg(all(feature = "electrum", features = "proxy"))]
 //! # {
 //! let electrum_blockchain = ElectrumBlockchain::from(electrum_client::Client::new("...")?);
 //! let wallet_electrum: Wallet<AnyBlockchain, _> = Wallet::new(

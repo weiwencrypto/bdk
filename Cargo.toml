@@ -50,7 +50,8 @@ optional = true
 branch = "altcoin-support"
 
 [dependencies.electrum-client]
-git = "ssh://git@github.com/tcharding/rust-electrum-client.git"
+git = "ssh://git@github.com/monacohq/rust-electrum-client.git"
+default-features = false
 optional = true
 version = "0.7"
 branch = "altcoin-support-v0.7"
