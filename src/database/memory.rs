@@ -21,7 +21,10 @@ use bitcoin::consensus::encode::{deserialize, serialize};
 use bitcoin::hash_types::Txid;
 use bitcoin::{OutPoint, Script, Transaction};
 
-use crate::database::{BatchDatabase, BatchOperations, ConfigurableDatabase, Database};
+use crate::database::{
+    BatchDatabase, BatchOperations, ConfigurableDatabase, Database, LastIndex, ScriptPubkeyPath,
+    Snapshot,
+};
 use crate::error::Error;
 use crate::types::*;
 
@@ -121,6 +124,39 @@ impl MemoryDatabase {
             map: BTreeMap::new(),
             deleted_keys: Vec::new(),
         }
+    }
+
+    /// Create a database by deserializing a previously serialized database snapshot.
+    pub fn deserialize(s: &str) -> Result<Self, Error> {
+        let mut db = MemoryDatabase::new();
+        let snapshot: Snapshot = serde_json::from_str(s)?;
+
+        for ScriptPubkeyPath {
+            script,
+            keychain,
+            child,
+        } in snapshot.scripts.iter()
+        {
+            db.set_script_pubkey(script, *keychain, *child)?;
+        }
+
+        for utxo in snapshot.utxos.iter() {
+            db.set_utxo(utxo)?;
+        }
+
+        for raw_tx in snapshot.raw_txs.iter() {
+            db.set_raw_tx(raw_tx)?;
+        }
+
+        for tx in snapshot.txs.iter() {
+            db.set_tx(tx)?;
+        }
+
+        for LastIndex { keychain, value } in snapshot.idxs.iter() {
+            db.set_last_index(*keychain, *value)?;
+        }
+
+        Ok(db)
     }
 }
 

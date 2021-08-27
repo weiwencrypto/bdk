@@ -180,6 +180,11 @@ where
             secp,
         })
     }
+
+    /// Serialize the database to a string for later re-construction by a new wallet instance.
+    pub fn serialize_database(&self) -> Result<String, Error> {
+        self.database.borrow().serialize()
+    }
 }
 
 /// The address index selection strategy to use to derived an address from the wallet's external

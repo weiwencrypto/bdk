@@ -27,6 +27,8 @@
 use bitcoin::hash_types::Txid;
 use bitcoin::{OutPoint, Script, Transaction, TxOut};
 
+use serde::{Deserialize, Serialize};
+
 use crate::error::Error;
 use crate::types::*;
 
@@ -185,6 +187,69 @@ pub(crate) trait DatabaseUtils: Database {
             })
             .transpose()
     }
+
+    fn serialize(&self) -> Result<String, Error> {
+        let stuff = self.extract_data()?;
+        let s = serde_json::to_string(&stuff)?;
+        Ok(s)
+    }
+
+    fn extract_data(&self) -> Result<Snapshot, Error> {
+        let wallet_chains = vec![KeychainKind::Internal, KeychainKind::External];
+        let mut scripts = vec![];
+        let mut idxs = vec![];
+
+        for keychain in wallet_chains.iter() {
+            if let Some(value) = self.get_last_index(*keychain)? {
+                idxs.push(LastIndex {
+                    keychain: *keychain,
+                    value,
+                });
+            }
+            for script in self.iter_script_pubkeys(Some(*keychain))? {
+                if let Some((keychain, child)) = self.get_path_from_script_pubkey(&script)? {
+                    scripts.push(ScriptPubkeyPath {
+                        script,
+                        keychain,
+                        child,
+                    });
+                }
+            }
+        }
+
+        Ok(Snapshot {
+            scripts,
+            utxos: self.iter_utxos()?,
+            raw_txs: self.iter_raw_txs()?,
+            txs: self.iter_txs(false)?,
+            idxs,
+        })
+    }
+}
+
+/// Used to hold a snapshot of the database.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub(crate) struct Snapshot {
+    scripts: Vec<ScriptPubkeyPath>,
+    utxos: Vec<LocalUtxo>,
+    raw_txs: Vec<Transaction>,
+    txs: Vec<TransactionDetails>,
+    idxs: Vec<LastIndex>,
+}
+
+/// Script data required by the database snapshot.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub(crate) struct ScriptPubkeyPath {
+    script: Script,
+    keychain: KeychainKind,
+    child: u32,
+}
+
+/// Last index data required by the database snapshot.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub(crate) struct LastIndex {
+    keychain: KeychainKind,
+    value: u32,
 }
 
 impl<T: Database> DatabaseUtils for T {}
