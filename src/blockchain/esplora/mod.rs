@@ -64,17 +64,18 @@ mod ureq;
 pub use self::ureq::*;
 
 fn into_fee_rate(target: usize, estimates: HashMap<String, f64>) -> Result<FeeRate, Error> {
-    let fee_val = estimates
-        .into_iter()
-        .map(|(k, v)| Ok::<_, std::num::ParseIntError>((k.parse::<usize>()?, v)))
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| Error::Generic(e.to_string()))?
-        .into_iter()
-        .take_while(|(k, _)| k <= &target)
-        .map(|(_, v)| v)
-        .last()
-        .unwrap_or(1.0);
-
+    let fee_val = {
+        let mut pairs = estimates
+            .into_iter()
+            .filter_map(|(k, v)| Some((k.parse::<usize>().ok()?, v)))
+            .collect::<Vec<_>>();
+        pairs.sort_unstable_by_key(|(k, _)| std::cmp::Reverse(*k));
+        pairs
+            .into_iter()
+            .find(|(k, _)| k <= &target)
+            .map(|(_, v)| v)
+            .unwrap_or(1.0)
+    };
     Ok(FeeRate::from_sat_per_vb(fee_val as f32))
 }
 
