@@ -26,8 +26,8 @@ use bitcoin::secp256k1::Secp256k1;
 use bitcoin::consensus::encode::serialize;
 use bitcoin::util::psbt;
 use bitcoin::{
-    Address, EcdsaSighashType, LockTime, Network, OutPoint, SchnorrSighashType, Script, Sequence,
-    Transaction, TxOut, Txid, Witness,
+    Address, Blockchain, EcdsaSighashType, LockTime, Network, OutPoint, SchnorrSighashType, Script,
+    Sequence, Transaction, TxOut, Txid, Witness,
 };
 
 use miniscript::psbt::{PsbtExt, PsbtInputExt, PsbtInputSatisfier};
@@ -95,6 +95,7 @@ pub struct Wallet<D> {
     change_signers: Arc<SignersContainer>,
 
     network: Network,
+    chain: Blockchain,
 
     database: RefCell<D>,
 
@@ -178,8 +179,9 @@ where
         change_descriptor: Option<E>,
         network: Network,
         database: D,
+        chain: Blockchain,
     ) -> Result<Self, Error> {
-        Self::new(descriptor, change_descriptor, network, database)
+        Self::new(descriptor, change_descriptor, network, database, chain)
     }
 
     /// Create a wallet.
@@ -190,6 +192,7 @@ where
         change_descriptor: Option<E>,
         network: Network,
         mut database: D,
+        chain: Blockchain,
     ) -> Result<Self, Error> {
         let secp = Secp256k1::new();
 
@@ -227,6 +230,7 @@ where
             signers,
             change_signers,
             network,
+            chain,
             database: RefCell::new(database),
             secp,
         })
@@ -257,7 +261,7 @@ where
         let address_result = self
             .get_descriptor_for_keychain(keychain)
             .at_derivation_index(incremented_index)
-            .address(self.network);
+            .address(self.network, self.chain);
 
         address_result
             .map(|address| AddressInfo {
@@ -277,7 +281,7 @@ where
             .get_descriptor_for_keychain(keychain)
             .at_derivation_index(current_index);
 
-        let script_pubkey = derived_key.script_pubkey();
+        let script_pubkey = derived_key.script_pubkey(self.chain);
 
         let found_used = self
             .list_transactions(true)?
@@ -290,7 +294,7 @@ where
             self.get_new_address(keychain)
         } else {
             derived_key
-                .address(self.network)
+                .address(self.network, self.chain)
                 .map(|address| AddressInfo {
                     address,
                     index: current_index,
@@ -304,7 +308,7 @@ where
     fn peek_address(&self, index: u32, keychain: KeychainKind) -> Result<AddressInfo, Error> {
         self.get_descriptor_for_keychain(keychain)
             .at_derivation_index(index)
-            .address(self.network)
+            .address(self.network, self.chain)
             .map(|address| AddressInfo {
                 index,
                 address,
@@ -320,7 +324,7 @@ where
 
         self.get_descriptor_for_keychain(keychain)
             .at_derivation_index(index)
-            .address(self.network)
+            .address(self.network, self.chain)
             .map(|address| AddressInfo {
                 index,
                 address,
@@ -381,7 +385,7 @@ where
         {
             debug!("caching external addresses");
             new_addresses_cached = true;
-            self.cache_addresses(KeychainKind::External, 0, max_address)?;
+            self.cache_addresses(KeychainKind::External, 0, max_address, self.chain)?;
         }
 
         if let Some(change_descriptor) = &self.change_descriptor {
@@ -398,7 +402,7 @@ where
             {
                 debug!("caching internal addresses");
                 new_addresses_cached = true;
-                self.cache_addresses(KeychainKind::Internal, 0, max_address)?;
+                self.cache_addresses(KeychainKind::Internal, 0, max_address, self.chain)?;
             }
         }
         Ok(new_addresses_cached)
@@ -537,9 +541,9 @@ where
     ///
     /// ```
     /// # use bdk::{Wallet, KeychainKind};
-    /// # use bdk::bitcoin::Network;
+    /// # use bdk::bitcoin::{Network, Blockchain};
     /// # use bdk::database::MemoryDatabase;
-    /// let wallet = Wallet::new("wpkh(tprv8ZgxMBicQKsPe73PBRSmNbTfbcsZnwWhz5eVmhHpi31HW29Z7mc9B4cWGRQzopNUzZUT391DeDJxL2PefNunWyLgqCKRMDkU1s2s8bAfoSk/84'/0'/0'/0/*)", None, Network::Testnet, MemoryDatabase::new())?;
+    /// let wallet = Wallet::new("wpkh(tprv8ZgxMBicQKsPe73PBRSmNbTfbcsZnwWhz5eVmhHpi31HW29Z7mc9B4cWGRQzopNUzZUT391DeDJxL2PefNunWyLgqCKRMDkU1s2s8bAfoSk/84'/0'/0'/0/*)", None, Network::Testnet, MemoryDatabase::new(), Blockchain::Bitcoin)?;
     /// for secret_key in wallet.get_signers(KeychainKind::External).signers().iter().filter_map(|s| s.descriptor_secret_key()) {
     ///     // secret_key: tprv8ZgxMBicQKsPe73PBRSmNbTfbcsZnwWhz5eVmhHpi31HW29Z7mc9B4cWGRQzopNUzZUT391DeDJxL2PefNunWyLgqCKRMDkU1s2s8bAfoSk/84'/0'/0'/0/*
     ///     println!("secret_key: {}", secret_key);
@@ -1251,11 +1255,17 @@ where
                         psbt_input,
                         psbt.get_utxo_for(n),
                         &self.secp,
+                        self.chain,
                     )
                 })
                 .or_else(|| {
                     self.change_descriptor.as_ref().and_then(|desc| {
-                        desc.derive_from_psbt_input(psbt_input, psbt.get_utxo_for(n), &self.secp)
+                        desc.derive_from_psbt_input(
+                            psbt_input,
+                            psbt.get_utxo_for(n),
+                            &self.secp,
+                            self.chain,
+                        )
                     })
                 });
 
@@ -1269,6 +1279,7 @@ where
                             After::new(current_height, false),
                             Older::new(current_height, create_height, false),
                         ),
+                        self.chain,
                     ) {
                         Ok(_) => {
                             let psbt_input = &mut psbt.inputs[n];
@@ -1339,7 +1350,7 @@ where
             .get_script_pubkey_from_path(keychain, index)?
             .is_none()
         {
-            self.cache_addresses(keychain, index, CACHE_ADDR_BATCH_SIZE)?;
+            self.cache_addresses(keychain, index, CACHE_ADDR_BATCH_SIZE, self.chain)?;
         }
 
         Ok(index)
@@ -1369,6 +1380,7 @@ where
         keychain: KeychainKind,
         from: u32,
         mut count: u32,
+        chain: Blockchain,
     ) -> Result<(), Error> {
         let (descriptor, keychain) = self._get_descriptor_for_keychain(keychain);
         if !descriptor.has_wildcard() {
@@ -1384,7 +1396,7 @@ where
         let start_time = time::Instant::new();
         for i in from..(from + count) {
             address_batch.set_script_pubkey(
-                &descriptor.at_derivation_index(i).script_pubkey(),
+                &descriptor.at_derivation_index(i).script_pubkey(chain),
                 keychain,
                 i,
             )?;
@@ -1617,7 +1629,7 @@ where
         let derived_descriptor = desc.at_derivation_index(child);
 
         psbt_input
-            .update_with_descriptor_unchecked(&derived_descriptor)
+            .update_with_descriptor_unchecked(&derived_descriptor, self.chain)
             .map_err(MiniscriptPsbtError::Conversion)?;
 
         let prev_output = utxo.outpoint;
@@ -1668,10 +1680,10 @@ where
                 let desc = desc.at_derivation_index(child);
 
                 if is_input {
-                    psbt.update_input_with_descriptor(index, &desc)
+                    psbt.update_input_with_descriptor(index, &desc, self.chain)
                         .map_err(MiniscriptPsbtError::UtxoUpdate)?;
                 } else {
-                    psbt.update_output_with_descriptor(index, &desc)
+                    psbt.update_output_with_descriptor(index, &desc, self.chain)
                         .map_err(MiniscriptPsbtError::OutputUpdate)?;
                 }
             }
@@ -1818,6 +1830,7 @@ pub fn get_funded_wallet(
         None,
         Network::Regtest,
         AnyDatabase::Memory(MemoryDatabase::new()),
+        Blockchain::Bitcoin,
     )
     .unwrap();
 
@@ -1921,6 +1934,7 @@ pub(crate) mod test {
             None,
             Network::Testnet,
             db,
+            Blockchain::Bitcoin,
         )
         .unwrap();
 
@@ -1950,7 +1964,7 @@ pub(crate) mod test {
     #[test]
     fn test_cache_addresses() {
         let db = MemoryDatabase::new();
-        let wallet = Wallet::new("wpkh(tpubEBr4i6yk5nf5DAaJpsi9N2pPYBeJ7fZ5Z9rmN4977iYLCGco1VyjB9tvvuvYtfZzjD5A8igzgw3HeWeeKFmanHYqksqZXYXGsw5zjnj7KM9/*)", None, Network::Testnet, db).unwrap();
+        let wallet = Wallet::new("wpkh(tpubEBr4i6yk5nf5DAaJpsi9N2pPYBeJ7fZ5Z9rmN4977iYLCGco1VyjB9tvvuvYtfZzjD5A8igzgw3HeWeeKFmanHYqksqZXYXGsw5zjnj7KM9/*)", None, Network::Testnet, db, Blockchain::Bitcoin).unwrap();
 
         assert_eq!(
             wallet.get_address(New).unwrap().to_string(),
@@ -1978,7 +1992,7 @@ pub(crate) mod test {
     #[test]
     fn test_cache_addresses_refill() {
         let db = MemoryDatabase::new();
-        let wallet = Wallet::new("wpkh(tpubEBr4i6yk5nf5DAaJpsi9N2pPYBeJ7fZ5Z9rmN4977iYLCGco1VyjB9tvvuvYtfZzjD5A8igzgw3HeWeeKFmanHYqksqZXYXGsw5zjnj7KM9/*)", None, Network::Testnet, db).unwrap();
+        let wallet = Wallet::new("wpkh(tpubEBr4i6yk5nf5DAaJpsi9N2pPYBeJ7fZ5Z9rmN4977iYLCGco1VyjB9tvvuvYtfZzjD5A8igzgw3HeWeeKFmanHYqksqZXYXGsw5zjnj7KM9/*)", None, Network::Testnet, db, Blockchain::Bitcoin).unwrap();
 
         assert_eq!(
             wallet.get_address(New).unwrap().to_string(),
@@ -2170,6 +2184,7 @@ pub(crate) mod test {
             None,
             Network::Regtest,
             AnyDatabase::Memory(MemoryDatabase::new()),
+            Blockchain::Bitcoin,
         )
         .unwrap();
 
@@ -2379,6 +2394,7 @@ pub(crate) mod test {
             None,
             Network::Regtest,
             AnyDatabase::Memory(MemoryDatabase::new()),
+            Blockchain::Bitcoin,
         )
         .unwrap();
 
@@ -2893,6 +2909,7 @@ pub(crate) mod test {
             None,
             Network::Regtest,
             AnyDatabase::Memory(MemoryDatabase::new()),
+            Blockchain::Bitcoin,
         )
         .unwrap();
 
@@ -4317,7 +4334,7 @@ pub(crate) mod test {
                     "wpkh(025476c2e83188368da1ff3e292e7acafcdb3566bb0ad253f62fc70f07aeee6357)",
                 )
                 .unwrap()
-                .script_pubkey(),
+                .script_pubkey(Blockchain::Bitcoin),
             }),
             ..Default::default()
         };
@@ -4459,7 +4476,7 @@ pub(crate) mod test {
     fn test_unused_address() {
         let db = MemoryDatabase::new();
         let wallet = Wallet::new("wpkh(tpubEBr4i6yk5nf5DAaJpsi9N2pPYBeJ7fZ5Z9rmN4977iYLCGco1VyjB9tvvuvYtfZzjD5A8igzgw3HeWeeKFmanHYqksqZXYXGsw5zjnj7KM9/*)",
-                                         None, Network::Testnet, db).unwrap();
+                                         None, Network::Testnet, db, Blockchain::Bitcoin).unwrap();
 
         assert_eq!(
             wallet.get_address(LastUnused).unwrap().to_string(),
@@ -4480,6 +4497,7 @@ pub(crate) mod test {
             None,
             Network::Testnet,
             MemoryDatabase::new(),
+            Blockchain::Bitcoin,
         )
         .unwrap();
 
@@ -4505,7 +4523,7 @@ pub(crate) mod test {
     fn test_peek_address_at_index() {
         let db = MemoryDatabase::new();
         let wallet = Wallet::new("wpkh(tpubEBr4i6yk5nf5DAaJpsi9N2pPYBeJ7fZ5Z9rmN4977iYLCGco1VyjB9tvvuvYtfZzjD5A8igzgw3HeWeeKFmanHYqksqZXYXGsw5zjnj7KM9/*)",
-                                         None, Network::Testnet, db).unwrap();
+                                         None, Network::Testnet, db, Blockchain::Bitcoin).unwrap();
 
         assert_eq!(
             wallet.get_address(Peek(1)).unwrap().to_string(),
@@ -4538,7 +4556,7 @@ pub(crate) mod test {
     fn test_peek_address_at_index_not_derivable() {
         let db = MemoryDatabase::new();
         let wallet = Wallet::new("wpkh(tpubEBr4i6yk5nf5DAaJpsi9N2pPYBeJ7fZ5Z9rmN4977iYLCGco1VyjB9tvvuvYtfZzjD5A8igzgw3HeWeeKFmanHYqksqZXYXGsw5zjnj7KM9/1)",
-                                         None, Network::Testnet, db).unwrap();
+                                         None, Network::Testnet, db, Blockchain::Bitcoin).unwrap();
 
         assert_eq!(
             wallet.get_address(Peek(1)).unwrap().to_string(),
@@ -4560,7 +4578,7 @@ pub(crate) mod test {
     fn test_reset_address_index() {
         let db = MemoryDatabase::new();
         let wallet = Wallet::new("wpkh(tpubEBr4i6yk5nf5DAaJpsi9N2pPYBeJ7fZ5Z9rmN4977iYLCGco1VyjB9tvvuvYtfZzjD5A8igzgw3HeWeeKFmanHYqksqZXYXGsw5zjnj7KM9/*)",
-                                         None, Network::Testnet, db).unwrap();
+                                         None, Network::Testnet, db, Blockchain::Bitcoin).unwrap();
 
         // new index 0
         assert_eq!(
@@ -4597,7 +4615,7 @@ pub(crate) mod test {
     fn test_returns_index_and_address() {
         let db = MemoryDatabase::new();
         let wallet = Wallet::new("wpkh(tpubEBr4i6yk5nf5DAaJpsi9N2pPYBeJ7fZ5Z9rmN4977iYLCGco1VyjB9tvvuvYtfZzjD5A8igzgw3HeWeeKFmanHYqksqZXYXGsw5zjnj7KM9/*)",
-                                         None, Network::Testnet, db).unwrap();
+                                         None, Network::Testnet, db, Blockchain::Bitcoin).unwrap();
 
         // new index 0
         assert_eq!(
@@ -4680,6 +4698,7 @@ pub(crate) mod test {
             Some(Bip84(key, KeychainKind::Internal)),
             Network::Regtest,
             MemoryDatabase::default(),
+            Blockchain::Bitcoin,
         )
         .unwrap();
 
@@ -4706,6 +4725,7 @@ pub(crate) mod test {
             None,
             Network::Regtest,
             MemoryDatabase::default(),
+            Blockchain::Bitcoin,
         )
         .unwrap();
 
@@ -4731,6 +4751,7 @@ pub(crate) mod test {
             None,
             Network::Regtest,
             MemoryDatabase::default(),
+            Blockchain::Bitcoin,
         )
         .unwrap();
 
@@ -5213,6 +5234,7 @@ pub(crate) mod test {
             None,
             Network::Regtest,
             AnyDatabase::Memory(MemoryDatabase::new()),
+            Blockchain::Bitcoin,
         )
         .unwrap();
 
@@ -5323,6 +5345,7 @@ pub(crate) mod test {
             None,
             Network::Regtest,
             AnyDatabase::Memory(MemoryDatabase::new()),
+            Blockchain::Bitcoin,
         )
         .unwrap();
 
